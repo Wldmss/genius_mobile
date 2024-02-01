@@ -1,0 +1,3 @@
+*.json
+.expo/
+node_modules/
