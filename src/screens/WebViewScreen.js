@@ -1,22 +1,57 @@
-import React, { useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { ScrollView } from 'react-native-web';
+import React, { useEffect, useRef, useState } from 'react';
+import { StyleSheet, BackHandler, Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
-import * as FileUtils from '@utils/FileUtils';
 
 const WebViewScreen = () => {
     const webViewRef = useRef(null);
 
+    const [backButtonEnabled, setBackButtonEnabled] = useState(false);
+
+    // Webview content loaded
+    const webViewLoaded = () => {
+        setBackButtonEnabled(true);
+    };
+
+    // Webview navigation state change
+    const onNavigationStateChange = (navState) => {
+        setBackButtonEnabled(navState.canGoBack);
+    };
+
+    useEffect(() => {
+        // Handle back event
+        const backHandler = () => {
+            if (backButtonEnabled) {
+                webViewRef.current.goBack();
+                return true;
+            } else {
+                Alert.alert(
+                    '앱 종료',
+                    'GENIUS를 종료하시겠습니까?',
+                    [
+                        { text: '아니요', onPress: () => null, style: 'cancel' },
+                        { text: '예', onPress: () => BackHandler.exitApp() },
+                    ],
+                    { cancelable: false }
+                );
+                return true;
+            }
+        };
+        // Subscribe to back state event
+        BackHandler.addEventListener('hardwareBackPress', backHandler);
+
+        // Unsubscribe
+        return () => BackHandler.removeEventListener('hardwareBackPress', backHandler);
+    }, [backButtonEnabled]);
+
     return (
-        <ScrollView style={styles.container}>
-            {/* <View style={styles.webview}></View> */}
-            <WebView
-                ref={webViewRef}
-                style={styles.webview}
-                source={{ uri: 'https://naver.com' }}
-                onShouldStartLoadWithRequest={(e) => FileUtils.handleDownloadRequest(e, webViewRef)}
-            />
-        </ScrollView>
+        <WebView
+            ref={webViewRef}
+            style={styles.webview}
+            onLoad={webViewLoaded}
+            source={{ uri: 'https://naver.com' }}
+            onNavigationStateChange={onNavigationStateChange}
+            // onShouldStartLoadWithRequest={(e) => FileUtils.handleDownloadRequest(e, webViewRef)}
+        />
     );
 };
 

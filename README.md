@@ -11,6 +11,19 @@
 -   babel 절대경로
     -   babel.config.js 참고
 
+## 환경 설정
+
+1. npm install
+
+2. expo cli 설치
+
+    1. npm install -g expo-cli
+    2. audit 오류 발생 시
+        - npm init -y : package.json 파일 생성
+        - npm i --package-lock-only : package-lock.json 파일 생성
+        - npm audit
+        - npm update
+
 ## expo 환경 설정
 
 1. expo 회원 가입

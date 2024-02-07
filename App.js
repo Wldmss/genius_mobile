@@ -1,19 +1,22 @@
 import { StyleSheet, SafeAreaView, StatusBar } from 'react-native';
-import WebViewScreen from '@screens/WebViewScreen';
+import { Provider } from 'react-redux';
+import store from '@store/store';
+import Navigation from '@navigation/Navigation';
 
 const App = () => {
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar />
-            <WebViewScreen />
-        </SafeAreaView>
+        <Provider store={store}>
+            <SafeAreaView style={styles.container}>
+                <StatusBar />
+                <Navigation />
+            </SafeAreaView>
+        </Provider>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingTop: StatusBar.currentHeight,
     },
 });
 
