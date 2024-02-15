@@ -1,8 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, BackHandler, Alert } from 'react-native';
+import PropTypes from 'prop-types';
+import { StyleSheet, BackHandler, Alert, StatusBar, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useSelector } from 'react-redux';
+import store from 'store/store';
+import { dispatchOne } from 'utils/Utils';
+import * as NavigateUtils from 'utils/NavigateUtils';
 
-const WebViewScreen = () => {
+const WebViewScreen = ({ navigation }) => {
+    const isLink = useSelector((state) => state.loginReducer.isLink);
+    const token = useSelector((state) => state.loginReducer.token);
+
     const webViewRef = useRef(null);
 
     const [backButtonEnabled, setBackButtonEnabled] = useState(false);
@@ -15,7 +23,45 @@ const WebViewScreen = () => {
     // Webview navigation state change
     const onNavigationStateChange = (navState) => {
         setBackButtonEnabled(navState.canGoBack);
+
+        if (!navState.loading) {
+            exitFullscreen();
+        }
     };
+
+    const handleOnMessage = (event) => {
+        const data = event.nativeEvent.data;
+        console.log(data);
+
+        switch (data) {
+            case 'enterFullscreen':
+                enterFullscreen();
+                break;
+            case 'logout':
+                store.dispatch(dispatchOne('SET_TOKEN', null));
+                break;
+            default:
+                break;
+        }
+    };
+
+    const enterFullscreen = () => {
+        if (Platform.OS === 'android') {
+            StatusBar.setHidden(true);
+        }
+    };
+
+    const exitFullscreen = () => {
+        if (Platform.OS === 'android') {
+            StatusBar.setHidden(false);
+        }
+    };
+
+    useEffect(() => {
+        console.log(isLink);
+        if (isLink) BackHandler.exitApp();
+        // todo QR 로그인 후 뭔가 해야함
+    }, [isLink]);
 
     useEffect(() => {
         // Handle back event
@@ -43,6 +89,10 @@ const WebViewScreen = () => {
         return () => BackHandler.removeEventListener('hardwareBackPress', backHandler);
     }, [backButtonEnabled]);
 
+    useEffect(() => {
+        // if (token == null) store.dispatch(NavigateUtils.navigateDispatch('Main', navigation));
+    }, [token]);
+
     return (
         <WebView
             ref={webViewRef}
@@ -50,6 +100,7 @@ const WebViewScreen = () => {
             onLoad={webViewLoaded}
             source={{ uri: 'https://naver.com' }}
             onNavigationStateChange={onNavigationStateChange}
+            onMessage={handleOnMessage}
             // onShouldStartLoadWithRequest={(e) => FileUtils.handleDownloadRequest(e, webViewRef)}
         />
     );
@@ -65,5 +116,9 @@ const styles = StyleSheet.create({
         border: `1px solid orange`,
     },
 });
+
+WebViewScreen.propTypes = {
+    navigation: PropTypes.any.isRequired,
+};
 
 export default WebViewScreen;

@@ -1,7 +1,9 @@
 import { StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import { Provider } from 'react-redux';
-import store from '@store/store';
-import Navigation from '@navigation/Navigation';
+import store from 'store/store';
+import Navigation from 'navigation/Navigation';
+import PopModal from 'modal/PopModal';
+// import Push from 'utils/Push';
 
 const App = () => {
     return (
@@ -9,6 +11,8 @@ const App = () => {
             <SafeAreaView style={styles.container}>
                 <StatusBar />
                 <Navigation />
+                <PopModal />
+                {/* <Push /> */}
             </SafeAreaView>
         </Provider>
     );

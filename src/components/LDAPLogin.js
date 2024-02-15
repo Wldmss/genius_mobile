@@ -1,13 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { commonInputStyles, commonTextStyles } from '@assets/styles';
-import { ldapLogin } from '@api/LoginApi';
+import { commonInputStyles, commonTextStyles } from 'assets/styles';
+import { ldapLogin } from 'api/LoginApi';
 import LoginLayout from './LoginLayout';
 import { useSelector } from 'react-redux';
-import store from '@store/store';
-import { dispatchOne } from '@utils/Utils';
+import store from 'store/store';
+import { dispatchMultiple } from 'utils/Utils';
+import * as StorageUtils from 'utils/StorageUtils';
+import * as NavigateUtils from 'utils/NavigateUtils';
+import LoginInfo from 'modal/LoginInfo';
 
+/** LDAP 로그인 */
 const LDAPLogin = ({ navigation }) => {
     const pin = useSelector((state) => state.loginReducer.pin);
 
@@ -21,8 +25,6 @@ const LDAPLogin = ({ navigation }) => {
     };
 
     const doLogin = () => {
-        console.log(value);
-
         if (value.username == '') {
             Alert.alert('아이디를 입력해주세요.');
             return;
@@ -66,85 +68,104 @@ const LDAPLogin = ({ navigation }) => {
             return;
         }
 
+        saveUserData();
+    };
+
+    const saveUserData = async () => {
+        const usersData = { username: value.username, password: value.password };
+        let changeData = { users: usersData };
+        console.log(changeData);
+        StorageUtils.changeDeviceData('genius', changeData);
+
+        let storeData = {
+            SET_USERS: usersData,
+        };
+
         if (!pin.isRegistered) {
-            store.dispatch(dispatchOne('SET_PIN', { ...pin, modFlag: true }));
+            storeData['SET_PIN'] = { ...pin, modFlag: true };
         }
 
-        navigation.navigate(pin.isRegistered ? 'WEB' : 'PIN');
-        // sendLogin(true);
+        store.dispatch(dispatchMultiple(storeData));
+
+        const tabValue = pin.isRegistered ? 'WEB' : 'PIN';
+        store.dispatch(NavigateUtils.navigateDispatch(tabValue, navigation));
     };
 
     const showInfo = () => {
-        //
+        store.dispatch({ type: 'OPEN_MODAL', element: <LoginInfo />, title: '문의 및 연락처' });
     };
 
     useEffect(() => {
-        sendOTP();
+        if (isLogin) sendOTP();
     }, [isLogin]);
 
-    return (
-        <LoginLayout
-            element={
-                <View style={styles.container}>
+    // return
+    const ldapLoginComponent = () => {
+        return (
+            <View style={styles.container}>
+                <View style={styles.loginBox}>
+                    <View style={styles.inputBox}>
+                        <TextInput
+                            id="username"
+                            value={value.username}
+                            placeholder="아이디를 입력하세요."
+                            placeholderTextColor={`#a9a9a9`}
+                            style={commonInputStyles.inputText}
+                            onChangeText={(input) => changeValue('username', input)}
+                        />
+                        <TextInput
+                            id="password"
+                            value={value.password}
+                            placeholder="비밀번호를 입력하세요."
+                            placeholderTextColor={`#a9a9a9`}
+                            secureTextEntry
+                            style={commonInputStyles.inputText}
+                            onChangeText={(input) => changeValue('password', input)}
+                        />
+                    </View>
+                    <Pressable style={commonInputStyles.buttonRed} onPress={doLogin}>
+                        <Text style={commonTextStyles.white}>로그인</Text>
+                    </Pressable>
+                </View>
+
+                {isLogin && (
                     <View style={styles.inputBox}>
                         <View style={styles.inputBox}>
                             <TextInput
-                                id="username"
-                                value={value.username}
-                                placeholder="아이디를 입력하세요."
+                                id="otp"
+                                ref={otpRef}
+                                value={value.otp}
+                                placeholder="인증번호를 입력하세요."
                                 placeholderTextColor={`#a9a9a9`}
                                 style={commonInputStyles.inputText}
-                                onChangeText={(input) => changeValue('username', input)}
+                                onChangeText={(input) => changeValue('otp', input)}
                             />
-                            <TextInput
-                                id="password"
-                                value={value.password}
-                                placeholder="비밀번호를 입력하세요."
-                                placeholderTextColor={`#a9a9a9`}
-                                secureTextEntry
-                                style={commonInputStyles.inputText}
-                                onChangeText={(input) => changeValue('password', input)}
-                            />
+                            <Text>{`남은시간 : ${timeRef.current}초`}</Text>
                         </View>
-                        <Pressable style={commonInputStyles.buttonRed} onPress={doLogin}>
-                            <Text style={commonTextStyles.white}>로그인</Text>
+                        <Pressable style={commonInputStyles.buttonRed} onPress={checkOTP}>
+                            <Text style={commonTextStyles.white}>인증번호 확인</Text>
                         </Pressable>
                     </View>
+                )}
 
-                    {isLogin && (
-                        <View style={styles.inputBox}>
-                            <View style={styles.inputBox}>
-                                <TextInput
-                                    id="otp"
-                                    ref={otpRef}
-                                    value={value.otp}
-                                    placeholder="인증번호를 입력하세요."
-                                    placeholderTextColor={`#a9a9a9`}
-                                    style={commonInputStyles.inputText}
-                                    onChangeText={(input) => changeValue('otp', input)}
-                                />
-                                <Text>{`남은시간 : ${timeRef.current}초`}</Text>
-                            </View>
-                            <Pressable style={commonInputStyles.buttonRed} onPress={checkOTP}>
-                                <Text style={commonTextStyles.white}>인증번호 확인</Text>
-                            </Pressable>
-                        </View>
-                    )}
-
-                    <View style={styles.infoBox}>
-                        <Text style={styles.desc}>{`로그인 아이디, 비밀번호는\nKATE/KTalk 아이디(사번), 비밀번호와\n동일합니다.`}</Text>
-                        <Pressable style={styles.infoButton} onPress={showInfo}>
-                            <Text style={styles.infoText}>문의 및 연락처</Text>
-                        </Pressable>
-                    </View>
+                <View style={styles.infoBox}>
+                    <Text style={styles.desc}>{`로그인 아이디, 비밀번호는\nKATE/KTalk 아이디(사번), 비밀번호와\n동일합니다.`}</Text>
+                    <Pressable style={styles.infoButton} onPress={showInfo}>
+                        <Text style={styles.infoText}>문의 및 연락처</Text>
+                    </Pressable>
                 </View>
-            }
-        />
-    );
+            </View>
+        );
+    };
+
+    return <LoginLayout element={ldapLoginComponent()} />;
 };
 
 const styles = StyleSheet.create({
     container: {
+        gap: 20,
+    },
+    loginBox: {
         gap: 20,
     },
     inputBox: {

@@ -40,6 +40,7 @@
 1.  원하는 명령어로 프로젝트 실행
 
     -   npx expo start
+    -   npx expo start --tunnel : 모바일&PC가 다른 네트워크를 사용해야 하는 경우 ngrok을 통한 proxy 자동 설정
     -   npm start
 
 2.  device 설정
@@ -54,3 +55,38 @@
 ## 이슈
 
     - expo-cli를 통해 만들어졌지만 추가 기능에 따라 react native cli로 변경 가능성 있음 => eject 참고
+
+## 구조
+
+-   .vscode : vsCode용 prettier, eslint 설정 파일
+-   jsconfig.json : vsCode 용 절대경로 설정 파일
+-   babel.config.js : react native 용 절대경로 설정 파일
+-   src
+    -   api
+        -   Api.js : axios 설정
+        -   ApiService.js : api method 설정
+        -   LoginApi.js : 로그인 api
+    -   assets : 이미지, css 파일
+    -   components
+        -   BioLogin.js
+        -   LDAPLogin.js
+        -   LoginLayout.js
+        -   OtherLogin.js
+        -   PinLogin.js
+    -   modal
+        -   PopModal.js : 모달 팝업창 (공통)
+        -   LoginInfo.js : LDAP 로그인 페이지 문의 및 연락처
+    -   navigation
+        -   Navigation.js : 네비게이션 설정
+    -   screens
+        -   Main.js : genius 메인 페이지
+        -   WebViewScreen.js : genius webview
+    -   store
+        -   store.js
+        -   reducers
+            -   loginReducer.js : 로그인 관련
+            -   modalReducer.js : 모달 관련
+    -   utils
+        -   NavigationUtils.js : navigation 공통화
+        -   StorageUtils.js : async storage 공통화
+        -   Utils.js : 공통 메소드

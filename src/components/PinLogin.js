@@ -1,11 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { StyleSheet, View, Text, TextInput, Pressable, Alert } from 'react-native';
-import { commonInputStyles, commonTextStyles } from '@assets/styles';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { commonInputStyles, commonTextStyles } from 'assets/styles';
 import LoginLayout from './LoginLayout';
 import { useSelector } from 'react-redux';
+import store from 'store/store';
+import { dispatchOne } from 'utils/Utils';
+import * as StorageUtils from 'utils/StorageUtils';
+import * as NavigateUtils from 'utils/NavigateUtils';
 
+/** PIN 로그인/등록 */
 const PinLogin = ({ navigation }) => {
     const pin = useSelector((state) => state.loginReducer.pin);
     const pinLength = 6;
@@ -20,7 +24,7 @@ const PinLogin = ({ navigation }) => {
     const changePin = (id, input) => {
         // 숫자가 아닌 경우 return
         if (isNaN(input)) {
-            console.log('숫자를 입력해주세요.');
+            Alert.alert('숫자를 입력해주세요.');
             return;
         }
 
@@ -62,7 +66,6 @@ const PinLogin = ({ navigation }) => {
     const handlePinButton = () => {
         if (value.enter.length != pinLength || (pin.modFlag && value.check.length != pinLength)) {
             Alert.alert(`${pinLength}자리를 입력해주세요.`);
-            console.log('자리수 오류');
             return false;
         }
 
@@ -76,8 +79,6 @@ const PinLogin = ({ navigation }) => {
             } else {
                 enterRef.current.focus();
                 Alert.alert('PIN이 일치하지 않습니다. 다시 시도해주세요.');
-                console.log('PIN 틀림');
-                console.log(pin);
                 setIsLogin(false);
             }
         } else {
@@ -91,11 +92,10 @@ const PinLogin = ({ navigation }) => {
     // PIN 등록
     const registPin = async () => {
         try {
-            const storageData = await AsyncStorage.getItem('users');
-            let data = JSON.parse(storageData);
-            data['pin'] = value.enter;
+            let changeData = { pin: value.enter };
+            StorageUtils.changeDeviceData('genius', changeData);
 
-            await AsyncStorage.setItem('users', JSON.stringify(data));
+            store.dispatch(dispatchOne('SET_PIN', { ...pin, value: value.enter }));
 
             Alert.alert('PIN이 설정되었습니다.');
             setIsLogin(true);
@@ -109,68 +109,69 @@ const PinLogin = ({ navigation }) => {
     }, [registRef.current]);
 
     useEffect(() => {
-        if (isLogin) navigation.navigate('WEB');
+        if (isLogin) {
+            store.dispatch(NavigateUtils.navigateDispatch('WEB', navigation));
+        }
     }, [isLogin]);
 
-    return (
-        <LoginLayout
-            element={
-                <View style={styles.container}>
-                    <View style={styles.input_box}>
-                        <TextInput
-                            id="enter"
-                            ref={enterRef}
-                            value={value.enter}
-                            inputMode="numeric"
-                            maxLength={pinLength}
-                            placeholder="PIN 입력"
-                            placeholderTextColor={`#a9a9a9`}
-                            secureTextEntry
-                            style={commonInputStyles.inputNumber}
-                            onChangeText={(input) => changePin('enter', input)}
-                        />
-                        {pin.modFlag && (
-                            <>
-                                <TextInput
-                                    id="check"
-                                    ref={checkRef}
-                                    value={value.check}
-                                    inputMode="numeric"
-                                    maxLength={pinLength}
-                                    placeholder="PIN 입력 확인"
-                                    placeholderTextColor={`#a9a9a9`}
-                                    secureTextEntry
-                                    style={commonInputStyles.inputNumber}
-                                    onChangeText={(input) => changePin('check', input)}
-                                />
-                                <Text style={isSame != null ? (isSame ? commonTextStyles.success : commonTextStyles.warning) : ''}>
-                                    {isSame != null ? (isSame ? `일치합니다.` : `일치하지 않습니다.`) : ''}
-                                </Text>
-                            </>
-                        )}
-                    </View>
-                    <Pressable style={commonInputStyles.buttonRed} onPress={handlePinButton}>
-                        <Text style={commonTextStyles.white}>{pin.modFlag ? 'PIN 설정' : '로그인 하기'}</Text>
-                    </Pressable>
+    // return
+    const pinLoginComponent = () => {
+        return (
+            <View style={styles.container} id="pin">
+                <View style={styles.inputBox}>
+                    <TextInput
+                        id="enter"
+                        ref={enterRef}
+                        value={value.enter}
+                        inputMode="numeric"
+                        maxLength={pinLength}
+                        placeholder="PIN 입력"
+                        placeholderTextColor={`#a9a9a9`}
+                        secureTextEntry
+                        style={commonInputStyles.inputNumber}
+                        onChangeText={(input) => changePin('enter', input)}
+                    />
+                    {pin.modFlag && (
+                        <>
+                            <TextInput
+                                id="check"
+                                ref={checkRef}
+                                value={value.check}
+                                inputMode="numeric"
+                                maxLength={pinLength}
+                                placeholder="PIN 입력 확인"
+                                placeholderTextColor={`#a9a9a9`}
+                                secureTextEntry
+                                style={commonInputStyles.inputNumber}
+                                onChangeText={(input) => changePin('check', input)}
+                            />
+                            <Text style={isSame != null ? (isSame ? commonTextStyles.success : commonTextStyles.warning) : ''}>
+                                {isSame != null ? (isSame ? `일치합니다.` : `일치하지 않습니다.`) : ''}
+                            </Text>
+                        </>
+                    )}
                 </View>
-            }
-        />
-    );
+                <Pressable style={commonInputStyles.buttonRed} onPress={handlePinButton}>
+                    <Text style={commonTextStyles.white}>{pin.modFlag ? 'PIN 설정' : '로그인 하기'}</Text>
+                </Pressable>
+            </View>
+        );
+    };
+
+    return <LoginLayout element={pinLoginComponent()} />;
 };
 
 const styles = StyleSheet.create({
     container: {
-        gap: 25,
+        gap: 20,
     },
-    input_box: {
+    inputBox: {
         gap: 12,
     },
 });
 
 PinLogin.propTypes = {
     navigation: PropTypes.any.isRequired,
-    // sendLogin: PropTypes.func.isRequired,
-    // pin: PropTypes.object.isRequired,
 };
 
 export default PinLogin;

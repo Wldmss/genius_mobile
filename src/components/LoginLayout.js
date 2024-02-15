@@ -1,19 +1,22 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Image, ImageBackground, StyleSheet, View } from 'react-native';
+import OtherLogin from './OtherLogin';
 
-const top_logo = require('/assets/login_top_title.svg');
-const genius_logo = require('/assets/genius_logo.png');
-const genius_background = require('/assets/genius_login_full_mobile.png');
+const top_logo = require('assets/login_top_title.svg');
+const genius_logo = require('assets/genius_logo.png');
+const genius_background = require('assets/genius_login_full_mobile.png');
 
+/** 로그인 페이지 (공통) */
 const LoginLayout = ({ element }) => {
     return (
-        <View style={styles.container}>
+        <View style={styles.container} id="content">
             <ImageBackground source={genius_background} style={styles.loginBackground}>
                 <Image source={top_logo} style={styles.title} resizeMode="contain" />
                 <View style={styles.enterBox}>
                     <Image source={genius_logo} style={styles.logo} resizeMode="contain" />
                     <View style={styles.loginContainer}>{element}</View>
+                    <OtherLogin />
                 </View>
             </ImageBackground>
         </View>
@@ -30,10 +33,12 @@ const styles = StyleSheet.create({
     },
     enterBox: {
         position: `relative`,
-        boxShadow: `0px 4px 16px 0px rgba(221, 221, 221, 0.60)`,
+        maxWidth: 300,
+        shadowColor: '#ddd',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.6,
+        shadowRadius: 16,
         borderRadius: 15,
-        width: 300,
-        height: 400,
         justifyContent: `center`,
         alignItems: `center`,
         backgroundColor: `#fff`,
@@ -42,23 +47,19 @@ const styles = StyleSheet.create({
         gap: 20,
         paddingVertical: 30,
         paddingHorizontal: 30,
-        // alignItems: `stretch`,
-        // flex: 1,
-        // margin: `auto`,
     },
     loginBackground: {
         flex: 1,
         justifyContent: `center`,
         alignItems: `center`,
         width: `100%`,
+        height: `100%`,
     },
     logo: {
-        // marginTop: 60,
         height: 30,
         width: 250,
     },
     loginContainer: {
-        flex: 1,
         gap: 20,
     },
     otherLoginBox: {

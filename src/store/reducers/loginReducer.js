@@ -6,9 +6,10 @@ const initialState = {
     tab: null,
     bioSupported: false,
     bioRecords: false,
+    isLink: false,
 };
 
-function loginReducer(state = initialState, action) {
+const loginReducer = (state = initialState, action) => {
     switch (action.type) {
         case 'SET_TOKEN':
             return {
@@ -45,9 +46,14 @@ function loginReducer(state = initialState, action) {
                 ...state,
                 bioRecords: action.payload,
             };
+        case 'SET_LINK':
+            return {
+                ...state,
+                isLink: action.payload,
+            };
         default:
             return state;
     }
-}
+};
 
 export default loginReducer;

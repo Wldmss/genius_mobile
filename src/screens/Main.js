@@ -1,20 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { StyleSheet, Text } from 'react-native';
+import { Alert, BackHandler, StyleSheet, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Authentication from 'expo-local-authentication';
-import LoginLayout from '@components/LoginLayout';
-import store from '@store/store';
-import { dispatchMultiple } from '@utils/Utils';
+import LoginLayout from 'components/LoginLayout';
+import store from 'store/store';
+import { dispatchMultiple, dispatchOne } from 'utils/Utils';
+import * as StorageUtils from 'utils/StorageUtils';
+import * as NavigateUtils from 'utils/NavigateUtils';
 
-const Main = ({ navigation }) => {
+/** genius main */
+const Main = ({ navigation, route }) => {
     const [tab, setTab] = useState(null);
+    const [isLink, setIsLink] = useState(null);
 
     const storeStorageData = async () => {
         try {
-            const genius = { pin: '123456', bio: true, users: { username: 91352089, password: 'a91352089!' } };
-            await AsyncStorage.setItem('genius', JSON.stringify(genius));
-            // await AsyncStorage.removeItem('genius');
+            // const genius = { pin: '123456', bio: false, users: { username: 91352089, password: 'a91352089!' } };
+            // await AsyncStorage.setItem('genius', JSON.stringify(genius));
+            await AsyncStorage.removeItem('genius');
         } catch (err) {
             console.log(err);
         }
@@ -22,8 +26,7 @@ const Main = ({ navigation }) => {
 
     // async store data
     const getStorageData = async () => {
-        const storageData = await AsyncStorage.getItem('genius');
-        const data = JSON.parse(storageData);
+        const data = await StorageUtils.getDeviceData('genius');
         console.log(data);
         const keys = data != null ? Object.keys(data) : {};
 
@@ -31,6 +34,7 @@ const Main = ({ navigation }) => {
         let pin = { isRegistered: false, value: '', modFlag: false };
         let users = null;
         let tabValue = 'LDAP';
+        let exitFlag = isLink;
 
         if (keys.length > 0) {
             const hasBio = keys.length > 0 && data['bio'] ? true : false;
@@ -46,7 +50,11 @@ const Main = ({ navigation }) => {
             users = keys.length > 0 && data['users'] ? data['users'] : null;
 
             tabValue = hasBio ? 'BIO' : hasPin ? 'PIN' : 'LDAP';
+
+            if (isLink) exitFlag = !hasBio && !hasPin;
         }
+
+        if (exitFlag) closeGenius();
 
         setStoreData({
             SET_PIN: pin,
@@ -60,25 +68,23 @@ const Main = ({ navigation }) => {
 
     // bio check
     const checkBioSupported = async () => {
-        let bioSupported = false;
+        let bioValue = {
+            SET_BIO_SUPPORTED: false,
+            SET_BIO_RECORDS: false,
+        };
 
         // 단말 생체인증 지원 여부 확인
         const isSupported = await Authentication.hasHardwareAsync();
 
         if (isSupported) {
             const biometryType = await Authentication.supportedAuthenticationTypesAsync();
-            bioSupported = biometryType.includes(1) || biometryType.includes(2);
-        } else {
-            bioSupported = false;
+            bioValue.SET_BIO_SUPPORTED = biometryType.includes(1) || biometryType.includes(2);
         }
 
         // 단말 생체인증 등록 여부 확인
-        const biometricRecords = bioSupported && (await Authentication.isEnrolledAsync());
+        bioValue.SET_BIO_RECORDS = bioValue.SET_BIO_SUPPORTED && (await Authentication.isEnrolledAsync());
 
-        setStoreData({
-            SET_BIO_SUPPORTED: bioSupported,
-            SET_BIO_RECORDS: biometricRecords,
-        });
+        setStoreData(bioValue);
     };
 
     // store 값 저장
@@ -86,15 +92,36 @@ const Main = ({ navigation }) => {
         store.dispatch(dispatchMultiple(data));
     };
 
-    useEffect(() => {
-        // storeStorageData();
-        checkBioSupported().then(() => {
-            getStorageData();
-        });
-    }, []);
+    // 앱 종료
+    const closeGenius = () => {
+        Alert.alert('GENIUS 종료', '로그인이 되어있지 않습니다.', [
+            {
+                text: '닫기',
+                onPress: () => {
+                    BackHandler.exitApp();
+                },
+            },
+        ]);
+    };
 
     useEffect(() => {
-        if (tab != null) navigation.navigate(tab);
+        const params = route && route.params ? route.params : {};
+        const link = params && Object.keys(params).length > 0 && Object.keys(params).includes('link') && params['link'] == 'true';
+        store.dispatch(dispatchOne('SET_LINK', link));
+        setIsLink(link);
+    }, [route]);
+
+    useEffect(() => {
+        if (isLink != null) {
+            // storeStorageData();
+            checkBioSupported().then(() => {
+                getStorageData();
+            });
+        }
+    }, [isLink]);
+
+    useEffect(() => {
+        if (tab != null) store.dispatch(NavigateUtils.navigateDispatch(tab, navigation));
     }, [tab]);
 
     return <LoginLayout element={<Text style={styles.container}>Loading..</Text>} />;
@@ -109,6 +136,7 @@ const styles = StyleSheet.create({
 
 Main.propTypes = {
     navigation: PropTypes.any.isRequired,
+    route: PropTypes.object,
 };
 
 export default Main;

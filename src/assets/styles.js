@@ -4,6 +4,9 @@ export const commonStyles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    hidden: {
+        opacity: 0,
+    },
 });
 
 export const commonInputStyles = StyleSheet.create({
@@ -71,6 +74,10 @@ export const commonInputStyles = StyleSheet.create({
         width: 250,
         margin: `auto`,
         borderRadius: 6,
+    },
+    cancel: {
+        width: 20,
+        height: 20,
     },
 });
 
