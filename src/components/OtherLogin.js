@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { commonInputStyles } from 'assets/styles';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import store from 'store/store';
-import { dispatchOne } from 'utils/Utils';
+import { dispatchOne } from 'utils/DispatchUtils';
 import { useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import * as NavigateUtils from 'utils/NavigateUtils';

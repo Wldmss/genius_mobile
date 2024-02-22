@@ -8,13 +8,15 @@ import store from 'store/store';
 import * as StorageUtils from 'utils/StorageUtils';
 import * as NavigateUtils from 'utils/NavigateUtils';
 import { useSelector } from 'react-redux';
-import { dispatchOne } from 'utils/Utils';
+import { dispatchOne } from 'utils/DispatchUtils';
 
 /** 생체 인증 로그인/등록 */
 const BioLogin = ({ navigation }) => {
     const bioStore = useSelector((state) => state.loginReducer.bio);
-    const [bio, setBio] = useState(bioStore);
     const bioRecords = useSelector((state) => state.loginReducer.bioRecords);
+    const tab = useSelector((state) => state.loginReducer.tab);
+
+    const [bio, setBio] = useState(bioStore);
 
     // 생체 인증
     const authenticate = async (isRegister) => {
@@ -34,6 +36,7 @@ const BioLogin = ({ navigation }) => {
         if (bioRecords && bio?.isRegistered) {
             const success = await authenticate();
             if (success) {
+                store.dispatch(dispatchOne('SET_TOKEN', {}));
                 store.dispatch(NavigateUtils.navigateDispatch('WEB', navigation));
             }
         } else {
@@ -48,10 +51,10 @@ const BioLogin = ({ navigation }) => {
             Alert.alert('GENIUS', '생체 인증이 등록되었습니다.', [
                 {
                     text: '확인',
-                    onPress: () => {
+                    onPress: async () => {
                         const bioValue = { ...bio, isRegistered: true, modFlag: false };
                         store.dispatch(dispatchOne('SET_BIO', bioValue));
-                        StorageUtils.changeDeviceData('genius', { bio: true });
+                        await StorageUtils.setDeviceData('bio', 'true');
                         setBio(bioValue);
                     },
                 },
@@ -62,12 +65,14 @@ const BioLogin = ({ navigation }) => {
     };
 
     useEffect(() => {
-        if (bio?.modFlag) {
-            registBio();
-        } else {
-            loginBio();
+        if (tab == 'BIO') {
+            if (bio?.modFlag) {
+                registBio();
+            } else {
+                loginBio();
+            }
         }
-    }, [bio]);
+    }, [bio, tab]);
 
     // return
     const bioLoginComponent = () => {

@@ -1,24 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Alert, BackHandler, StyleSheet, Text } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import * as Authentication from 'expo-local-authentication';
 import LoginLayout from 'components/LoginLayout';
 import store from 'store/store';
-import { dispatchMultiple, dispatchOne } from 'utils/Utils';
+import { dispatchMultiple, dispatchOne } from 'utils/DispatchUtils';
 import * as StorageUtils from 'utils/StorageUtils';
 import * as NavigateUtils from 'utils/NavigateUtils';
+import { useSelector } from 'react-redux';
+import { AES } from 'crypto-js';
 
 /** genius main */
 const Main = ({ navigation, route }) => {
     const [tab, setTab] = useState(null);
     const [isLink, setIsLink] = useState(null);
+    const [doneBio, setDoneBio] = useState(false);
+    const token = useSelector((state) => state.loginReducer.token);
 
     const storeStorageData = async () => {
         try {
-            // const genius = { pin: '123456', bio: false, users: { username: 91352089, password: 'a91352089!' } };
-            // await AsyncStorage.setItem('genius', JSON.stringify(genius));
-            await AsyncStorage.removeItem('genius');
+            // const genius = { pin: '123456', bio: false, users: 91352089 };
+            // await SecureStore.setItemAsync('genius', JSON.stringify(genius));
+            await SecureStore.deleteItemAsync('genius');
+            await SecureStore.deleteItemAsync('bio');
+            await SecureStore.deleteItemAsync('pin');
+            await SecureStore.deleteItemAsync('users');
+
+            // const crypto = AES.encrypt('123343', 'genius').toString();
+            // console.log(crypto);
+            // await SecureStore.setItemAsync('genius_pin', crypto);
         } catch (err) {
             console.log(err);
         }
@@ -26,34 +37,25 @@ const Main = ({ navigation, route }) => {
 
     // async store data
     const getStorageData = async () => {
-        const data = await StorageUtils.getDeviceData('genius');
-        console.log(data);
-        const keys = data != null ? Object.keys(data) : {};
+        let bioData = await StorageUtils.getDeviceData('bio');
+        let pinData = await StorageUtils.getDeviceData('pin');
+        let users = await StorageUtils.getDeviceData('users');
 
         let bio = { isRegistered: false, modFlag: false };
-        let pin = { isRegistered: false, value: '', modFlag: false };
-        let users = null;
-        let tabValue = 'LDAP';
-        let exitFlag = isLink;
+        let pin = { isRegistered: false, value: '', modFlag: true };
 
-        if (keys.length > 0) {
-            const hasBio = keys.length > 0 && data['bio'] ? true : false;
-            bio.isRegistered = hasBio;
-            bio.modFlag = false;
+        const hasBio = bioData != null && bioData == 'true';
+        bio.isRegistered = hasBio;
+        bio.modFlag = false;
 
-            const pinValue = keys.length > 0 && data['pin'] ? data['pin'] : null;
-            const hasPin = pinValue != null;
-            pin.isRegistered = hasPin;
-            pin.value = pinValue;
-            pin.modFlag = false;
+        const hasPin = pinData != null;
+        pin.isRegistered = hasPin;
+        pin.value = pinData;
+        pin.modFlag = !hasPin;
 
-            users = keys.length > 0 && data['users'] ? data['users'] : null;
+        const tabValue = users == null ? 'PIN' : hasBio ? 'BIO' : hasPin ? 'PIN' : 'LDAP';
 
-            tabValue = hasBio ? 'BIO' : hasPin ? 'PIN' : 'LDAP';
-
-            if (isLink) exitFlag = !hasBio && !hasPin;
-        }
-
+        const exitFlag = isLink && !hasBio && !hasPin;
         if (exitFlag) closeGenius();
 
         setStoreData({
@@ -85,6 +87,7 @@ const Main = ({ navigation, route }) => {
         bioValue.SET_BIO_RECORDS = bioValue.SET_BIO_SUPPORTED && (await Authentication.isEnrolledAsync());
 
         setStoreData(bioValue);
+        setDoneBio(true);
     };
 
     // store 값 저장
@@ -107,18 +110,27 @@ const Main = ({ navigation, route }) => {
     useEffect(() => {
         const params = route && route.params ? route.params : {};
         const link = params && Object.keys(params).length > 0 && Object.keys(params).includes('link') && params['link'] == 'true';
+
         store.dispatch(dispatchOne('SET_LINK', link));
+        store.dispatch(dispatchOne('SET_TOKEN', link ? {} : null));
+
         setIsLink(link);
     }, [route]);
 
     useEffect(() => {
-        if (isLink != null) {
+        if (isLink != null && token == null) {
+            setTab(null);
             // storeStorageData();
-            checkBioSupported().then(() => {
+
+            if (doneBio) {
                 getStorageData();
-            });
+            } else {
+                checkBioSupported().then(() => {
+                    getStorageData();
+                });
+            }
         }
-    }, [isLink]);
+    }, [isLink, token]);
 
     useEffect(() => {
         if (tab != null) store.dispatch(NavigateUtils.navigateDispatch(tab, navigation));

@@ -29,7 +29,7 @@
 1. expo 회원 가입
 
     - expo.dev
-    - 개인 계정 생성
+    - 계정 생성
 
 2. expo 로그인
     - npx expo login (PC terminal에서 실행)
@@ -61,6 +61,7 @@
 -   .vscode : vsCode용 prettier, eslint 설정 파일
 -   jsconfig.json : vsCode 용 절대경로 설정 파일
 -   babel.config.js : react native 용 절대경로 설정 파일
+-   metro.config.js : svg 설정
 -   src
     -   api
         -   Api.js : axios 설정

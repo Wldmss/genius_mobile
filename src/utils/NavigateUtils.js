@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import PropTypes from 'prop-types';
-import { dispatchOne } from './Utils';
+import { dispatchOne } from './DispatchUtils';
 
 // navigate
 export const navigate = (id, navigation) => {

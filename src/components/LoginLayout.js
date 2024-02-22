@@ -2,8 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Image, ImageBackground, StyleSheet, View } from 'react-native';
 import OtherLogin from './OtherLogin';
+import TopLogo from 'assets/login_top_title.svg';
 
-const top_logo = require('assets/login_top_title.svg');
 const genius_logo = require('assets/genius_logo.png');
 const genius_background = require('assets/genius_login_full_mobile.png');
 
@@ -12,7 +12,7 @@ const LoginLayout = ({ element }) => {
     return (
         <View style={styles.container} id="content">
             <ImageBackground source={genius_background} style={styles.loginBackground}>
-                <Image source={top_logo} style={styles.title} resizeMode="contain" />
+                <TopLogo style={styles.title} />
                 <View style={styles.enterBox}>
                     <Image source={genius_logo} style={styles.logo} resizeMode="contain" />
                     <View style={styles.loginContainer}>{element}</View>

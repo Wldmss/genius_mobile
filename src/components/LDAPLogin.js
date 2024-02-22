@@ -6,7 +6,7 @@ import { ldapLogin } from 'api/LoginApi';
 import LoginLayout from './LoginLayout';
 import { useSelector } from 'react-redux';
 import store from 'store/store';
-import { dispatchMultiple } from 'utils/Utils';
+import { dispatchMultiple, dispatchOne } from 'utils/DispatchUtils';
 import * as StorageUtils from 'utils/StorageUtils';
 import * as NavigateUtils from 'utils/NavigateUtils';
 import LoginInfo from 'modal/LoginInfo';
@@ -43,15 +43,15 @@ const LDAPLogin = ({ navigation }) => {
         setIsLogin(true);
         sendOTP();
 
-        // LDAP 로그인 (TODO)
-        // ldapLogin(value.username, value.password).then((res) => {
-        //     if (res.status) {
-        //         setIsLogin(true);
-        //         sendOTP();
-        //     } else {
-        //         Alert.alert('로그인에 실패했습니다.');
-        //     }
-        // });
+        // LDAP 로그인 TODO
+        ldapLogin(value.username, value.password).then((res) => {
+            if (res.status) {
+                setIsLogin(true);
+                sendOTP();
+            } else {
+                Alert.alert('로그인에 실패했습니다.');
+            }
+        });
     };
 
     // OTP 전송 (TODO)
@@ -72,23 +72,19 @@ const LDAPLogin = ({ navigation }) => {
     };
 
     const saveUserData = async () => {
-        const usersData = { username: value.username, password: value.password };
-        let changeData = { users: usersData };
-        console.log(changeData);
-        StorageUtils.changeDeviceData('genius', changeData);
+        await StorageUtils.setDeviceData('users', value.username);
 
         let storeData = {
-            SET_USERS: usersData,
+            SET_USERS: value.username,
         };
 
-        if (!pin.isRegistered) {
-            storeData['SET_PIN'] = { ...pin, modFlag: true };
-        }
+        // if (!pin.isRegistered) {
+        //     storeData['SET_PIN'] = { ...pin, modFlag: true };
+        // }
 
         store.dispatch(dispatchMultiple(storeData));
-
-        const tabValue = pin.isRegistered ? 'WEB' : 'PIN';
-        store.dispatch(NavigateUtils.navigateDispatch(tabValue, navigation));
+        store.dispatch(dispatchOne('SET_TOKEN', {}));
+        store.dispatch(NavigateUtils.navigateDispatch('WEB', navigation));
     };
 
     const showInfo = () => {

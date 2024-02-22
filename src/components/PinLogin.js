@@ -5,13 +5,15 @@ import { commonInputStyles, commonTextStyles } from 'assets/styles';
 import LoginLayout from './LoginLayout';
 import { useSelector } from 'react-redux';
 import store from 'store/store';
-import { dispatchOne } from 'utils/Utils';
+import { dispatchOne } from 'utils/DispatchUtils';
 import * as StorageUtils from 'utils/StorageUtils';
 import * as NavigateUtils from 'utils/NavigateUtils';
 
 /** PIN 로그인/등록 */
 const PinLogin = ({ navigation }) => {
     const pin = useSelector((state) => state.loginReducer.pin);
+    const token = useSelector((state) => state.loginReducer.token);
+
     const pinLength = 6;
     const enterRef = useRef(null);
     const checkRef = useRef(null);
@@ -75,6 +77,7 @@ const PinLogin = ({ navigation }) => {
         if (!pin.modFlag) {
             if (pin.value != null && Number(value.enter) == Number(pin.value)) {
                 // 로그인 성공
+                store.dispatch(dispatchOne('SET_TOKEN', {}));
                 setIsLogin(true);
             } else {
                 enterRef.current.focus();
@@ -92,13 +95,11 @@ const PinLogin = ({ navigation }) => {
     // PIN 등록
     const registPin = async () => {
         try {
-            let changeData = { pin: value.enter };
-            StorageUtils.changeDeviceData('genius', changeData);
-
+            await StorageUtils.setDeviceData('pin', value.enter);
             store.dispatch(dispatchOne('SET_PIN', { ...pin, value: value.enter }));
 
             Alert.alert('PIN이 설정되었습니다.');
-            setIsLogin(true);
+            store.dispatch(NavigateUtils.navigateDispatch('LDAP', navigation));
         } catch (err) {
             console.log(err);
         }
@@ -110,7 +111,8 @@ const PinLogin = ({ navigation }) => {
 
     useEffect(() => {
         if (isLogin) {
-            store.dispatch(NavigateUtils.navigateDispatch('WEB', navigation));
+            const tabValue = token == null ? 'LDAP' : 'WEB';
+            store.dispatch(NavigateUtils.navigateDispatch(tabValue, navigation));
         }
     }, [isLogin]);
 
